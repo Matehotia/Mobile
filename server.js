@@ -1,6 +1,8 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -13,6 +15,16 @@ const pool = new Pool({
   password: 'postgres',  // votre mot de passe
   port: 5432,
 });
+
+// Configuration de multer pour le stockage des fichiers
+const storage = multer.diskStorage({
+  destination: './uploads/avatars/',
+  filename: function(req, file, cb) {
+    cb(null, 'avatar-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // Route de test
 app.get('/', (req, res) => {
@@ -234,7 +246,85 @@ app.get('/check-agenda', async (req, res) => {
   }
 });
 
+// Route pour upload l'avatar
+app.post('/upload-avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier uploadé' });
+    }
+
+    const avatarUrl = `http://172.20.10.2:3000/uploads/avatars/${req.file.filename}`;
+    
+    await pool.query(
+      'UPDATE users SET avatar_url = $1 WHERE id = 1',
+      [avatarUrl]
+    );
+
+    res.json({ success: true, avatar_url: avatarUrl });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour servir les images
+app.use('/uploads', express.static('uploads'));
+
+// Route pour récupérer le profil
+app.get('/profile', async (req, res) => {
+  console.log('Requête profile reçue');
+  try {
+    const result = await pool.query(`
+      SELECT id, username, email, avatar_url, created_at::text
+      FROM users 
+      WHERE id = 1
+    `);
+    console.log('Données profile:', result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour les statistiques
+app.get('/user-stats', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        COALESCE(SUM(EXTRACT(EPOCH FROM (sleep_end::time - sleep_start::time))/3600), 0) as total_sleep_hours,
+        COALESCE(ROUND(AVG(quality)::numeric, 1), 0) as average_quality,
+        COALESCE((SELECT COUNT(*) FROM agenda WHERE user_id = 1), 0) as planned_events,
+        COALESCE((SELECT COUNT(*) FROM agenda WHERE user_id = 1 AND is_completed = true), 0) as completed_events
+      FROM sleep_records 
+      WHERE user_id = 1
+    `);
+    
+    console.log('Stats:', stats.rows[0]);
+    res.json(stats.rows[0]);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+app.put('/events/:id/complete', async (req, res) => {
+  const { id } = req.params;
+  const { is_completed } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE agenda SET is_completed = $1 WHERE id = $2 AND user_id = 1',
+      [is_completed, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 const PORT = 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 }); 

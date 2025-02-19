@@ -62,14 +62,18 @@ export default function SleepScreen() {
   const calculateDuration = (start: string, end: string) => {
     const [startHours, startMinutes] = start.split(':').map(Number);
     const [endHours, endMinutes] = end.split(':').map(Number);
-    let hours = endHours - startHours;
-    let minutes = endMinutes - startMinutes;
-    if (minutes < 0) {
-      hours -= 1;
-      minutes += 60;
+    
+    // Convertir en minutes depuis minuit
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    const endTotalMinutes = endHours * 60 + endMinutes;
+    
+    // Si l'heure de fin est avant l'heure de début, on ajoute 24h
+    let duration = endTotalMinutes - startTotalMinutes;
+    if (duration < 0) {
+      duration += 24 * 60; // Ajouter 24h en minutes
     }
-    if (hours < 0) hours += 24;
-    return hours * 60 + minutes;
+    
+    return duration;
   };
 
   const handleAddSleep = () => {
@@ -92,20 +96,23 @@ export default function SleepScreen() {
         },
         body: JSON.stringify({
           ...newSleep,
-          quality: quality  // S'assurer que c'est un nombre
+          quality: quality
         }),
       });
 
       if (response.ok) {
+        // Mettre à jour les statistiques globales
+        await fetch('http://172.20.10.2:3000/update-stats', {
+          method: 'POST',
+        });
+        
+        fetchSleepData(); // Rafraîchir les données locales
         Alert.alert('Succès', 'Sommeil enregistré !');
         setModalVisible(false);
-        fetchSleepData();
-      } else {
-        Alert.alert('Erreur', 'Impossible d\'enregistrer le sommeil');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Erreur', 'Erreur de connexion');
+      console.error('Erreur:', error);
+      Alert.alert('Erreur', "Impossible d'enregistrer le sommeil");
     }
   };
 
@@ -118,7 +125,7 @@ export default function SleepScreen() {
       <ScrollView>
         {/* En-tête avec statistiques */}
         <ThemedView style={styles.header}>
-          <ThemedText type="title">Suivi du Sommeil</ThemedText>
+          <ThemedText style={styles.title}>Suivi du Sommeil</ThemedText>
         </ThemedView>
 
         {/* Cartes de statistiques */}
@@ -171,10 +178,12 @@ export default function SleepScreen() {
               <ThemedText style={styles.historyDate}>
                 {new Date(record.sleep_date).toLocaleDateString('fr-FR')}
               </ThemedText>
-              <ThemedText>
+              <ThemedText style={styles.historyDetails}>
                 {record.sleep_start.slice(0, 5)} → {record.sleep_end.slice(0, 5)}
               </ThemedText>
-              <ThemedText>Qualité: {record.quality}/5</ThemedText>
+              <ThemedText style={styles.historyQuality}>
+                Qualité: {record.quality}/5
+              </ThemedText>
             </ThemedView>
           ))}
         </ThemedView>
@@ -194,10 +203,15 @@ export default function SleepScreen() {
       >
         <ThemedView style={styles.modalContainer}>
           <ThemedView style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Nouveau sommeil</ThemedText>
-            
-            <ThemedView style={styles.inputGroup}>
-              <ThemedText>Heure de coucher:</ThemedText>
+            <ThemedView style={styles.modalHeader}>
+              <ThemedText style={styles.modalTitle}>Nouveau sommeil</ThemedText>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                <AntDesign name="close" size={24} color="#4b5563" />
+              </TouchableOpacity>
+            </ThemedView>
+
+            <ThemedView style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Heure de coucher:</ThemedText>
               <TextInput
                 style={styles.input}
                 value={newSleep.sleep_start}
@@ -206,8 +220,8 @@ export default function SleepScreen() {
               />
             </ThemedView>
 
-            <ThemedView style={styles.inputGroup}>
-              <ThemedText>Heure de réveil:</ThemedText>
+            <ThemedView style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Heure de réveil:</ThemedText>
               <TextInput
                 style={styles.input}
                 value={newSleep.sleep_end}
@@ -216,43 +230,23 @@ export default function SleepScreen() {
               />
             </ThemedView>
 
-            <ThemedView style={styles.inputGroup}>
-              <ThemedText>Qualité:</ThemedText>
-              <ThemedView style={styles.qualityContainer}>
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <TouchableOpacity
-                    key={num}
-                    style={[
-                      styles.qualityButton,
-                      newSleep.quality === num && styles.qualityButtonSelected
-                    ]}
-                    onPress={() => setNewSleep({...newSleep, quality: num})}
-                  >
-                    <ThemedText style={[
-                      styles.qualityButtonText,
-                      newSleep.quality === num && styles.qualityButtonTextSelected
-                    ]}>
-                      {num}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </ThemedView>
+            <ThemedView style={styles.qualityContainer}>
+              {[1, 2, 3, 4, 5].map((num) => (
+                <TouchableOpacity
+                  key={num}
+                  style={[styles.qualityButton, newSleep.quality === num && styles.qualityButtonSelected]}
+                  onPress={() => setNewSleep({...newSleep, quality: num})}
+                >
+                  <ThemedText style={[styles.qualityText, newSleep.quality === num && styles.qualityTextSelected]}>
+                    {num}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
             </ThemedView>
 
-            <ThemedView style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.button, styles.cancelButton]} 
-                onPress={() => setModalVisible(false)}
-              >
-                <ThemedText style={styles.buttonText}>Annuler</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, styles.saveButton]} 
-                onPress={handleSaveSleep}
-              >
-                <ThemedText style={styles.buttonText}>Enregistrer</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveSleep}>
+              <ThemedText style={styles.saveButtonText}>Enregistrer</ThemedText>
+            </TouchableOpacity>
           </ThemedView>
         </ThemedView>
       </Modal>
@@ -263,148 +257,223 @@ export default function SleepScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
+    backgroundColor: '#f3f4f6',
   },
   header: {
-    padding: 20,
+    padding: 16,
+    paddingTop: 48,
+    backgroundColor: '#60a5fa',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 5,
   },
   statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     padding: 20,
-    gap: 15,
+    marginBottom: 20,
   },
   statCard: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 8,
   },
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#60a5fa',
   },
   graphContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 20,
+    margin: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  graph: {
-    marginVertical: 8,
-    borderRadius: 16,
+    color: '#1f2937',
+    marginBottom: 15,
   },
   historyContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 20,
+    margin: 20,
+    marginTop: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   historyItem: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
   historyDate: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  historyDetails: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  historyTime: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  historyQuality: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  qualityText: {
+    fontSize: 14,
+    color: '#60a5fa',
+    marginRight: 5,
+  },
+  qualityTextSelected: {
+    color: '#ffffff',
+    fontSize: 16,
+  },
+  qualityStars: {
+    color: '#fbbf24',
+  },
+  noHistory: {
+    textAlign: 'center',
+    color: '#6b7280',
+    fontSize: 16,
+    marginTop: 10,
   },
   addButton: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
+    bottom: 30,
+    right: 30,
+    backgroundColor: '#60a5fa',
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
+    minHeight: '50%',
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    marginBottom: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 5,
-  },
-  buttonContainer: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  button: {
-    padding: 10,
-    borderRadius: 5,
-    width: '45%',
-  },
-  cancelButton: {
-    backgroundColor: '#ff4444',
-  },
-  saveButton: {
-    backgroundColor: '#007AFF',
-  },
-  buttonText: {
-    color: 'white',
-    textAlign: 'center',
+  modalTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  closeButton: {
+    padding: 10,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#4b5563',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 10,
   },
   qualityContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginBottom: 20,
   },
   qualityButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    justifyContent: 'center',
+    flex: 1,
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#f8fafc',
   },
   qualityButtonSelected: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#60a5fa',
   },
   qualityButtonText: {
-    color: '#007AFF',
     fontSize: 16,
+    color: '#4b5563',
   },
   qualityButtonTextSelected: {
-    color: 'white',
+    color: '#ffffff',
+  },
+  saveButton: {
+    backgroundColor: '#60a5fa',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  graph: {
+    marginVertical: 10,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
 });

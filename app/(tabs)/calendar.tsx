@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -15,6 +15,7 @@ type Event = {
   end_time: string;
   event_type: string;
   priority: number;
+  is_completed: boolean;
 };
 
 type MarkedDates = {
@@ -116,30 +117,72 @@ export default function CalendarScreen() {
     setShowDatePicker(false);
     if (selectedDate) {
       const formattedDate = selectedDate.toISOString().split('T')[0];
-      setNewEvent({...newEvent, event_date: formattedDate});
+      setNewEvent(prev => ({...prev, event_date: formattedDate}));
+    }
+  };
+
+  const toggleEventCompletion = async (eventId: number, completed: boolean) => {
+    try {
+      const response = await fetch(`http://172.20.10.2:3000/events/${eventId}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_completed: completed }),
+      });
+
+      if (response.ok) {
+        fetchEvents();
+        // Mettre à jour les statistiques
+        await fetch('http://172.20.10.2:3000/update-stats', {
+          method: 'POST',
+        });
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      Alert.alert('Erreur', "Impossible de mettre à jour l'événement");
     }
   };
 
   return (
     <ThemedView style={styles.container}>
-      <Calendar
-        onDayPress={(day: DateData) => setSelectedDate(day.dateString)}
-        markedDates={{
-          ...markedDates,
-          [selectedDate]: {
-            selected: true,
-            marked: markedDates[selectedDate]?.marked,
-            dotColor: markedDates[selectedDate]?.dotColor
-          }
-        }}
-        theme={{
-          selectedDayBackgroundColor: '#007AFF',
-          todayTextColor: '#007AFF',
-          arrowColor: '#007AFF',
-        }}
-      />
-
-      <ScrollView style={styles.eventList}>
+      <ThemedView style={styles.header}>
+        <ThemedText style={styles.title}>Calendrier</ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.calendarContainer}>
+        <Calendar
+          onDayPress={(day: DateData) => setSelectedDate(day.dateString)}
+          markedDates={{
+            ...markedDates,
+            [selectedDate]: {
+              selected: true,
+              marked: markedDates[selectedDate]?.marked,
+              dotColor: markedDates[selectedDate]?.dotColor
+            }
+          }}
+          theme={{
+            selectedDayBackgroundColor: '#60a5fa',
+            todayTextColor: '#60a5fa',
+            arrowColor: '#60a5fa',
+            monthTextColor: '#1f2937',
+            textMonthFontSize: 16,
+            textDayFontSize: 14,
+            textDayHeaderFontSize: 14,
+            'stylesheet.calendar.header': {
+              week: {
+                marginTop: 2,
+                marginBottom: 2,
+                flexDirection: 'row',
+                justifyContent: 'space-around'
+              },
+              monthText: {
+                margin: 5
+              }
+            }
+          }}
+        />
+      </ThemedView>
+      <ScrollView style={styles.eventsList}>
         <ThemedText style={styles.dateTitle}>
           {new Date(selectedDate).toLocaleDateString('fr-FR', {
             weekday: 'long',
@@ -150,8 +193,26 @@ export default function CalendarScreen() {
 
         {getEventsForSelectedDate().length > 0 ? (
           getEventsForSelectedDate().map((event, index) => (
-            <ThemedView key={index} style={styles.eventCard}>
-              <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
+            <TouchableOpacity 
+              key={index}
+              style={[
+                styles.eventCard,
+                event.is_completed && styles.completedEvent
+              ]}
+            >
+              <ThemedView style={styles.eventHeader}>
+                <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
+                <TouchableOpacity 
+                  onPress={() => toggleEventCompletion(event.id, !event.is_completed)}
+                  style={styles.completeButton}
+                >
+                  <AntDesign 
+                    name={event.is_completed ? "checkcircle" : "checkcircleo"} 
+                    size={24} 
+                    color={event.is_completed ? "#4CD964" : "#999"} 
+                  />
+                </TouchableOpacity>
+              </ThemedView>
               <ThemedText style={styles.eventTime}>
                 {event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}
               </ThemedText>
@@ -161,17 +222,14 @@ export default function CalendarScreen() {
                 </ThemedText>
               )}
               <ThemedView style={styles.eventMeta}>
-                <ThemedText style={[
-                  styles.eventType,
-                  { color: event.event_type === 'exam' ? '#FF3B30' : '#007AFF' }
-                ]}>
+                <ThemedText style={[styles.eventType, { color: event.event_type === 'exam' ? '#FF3B30' : '#007AFF' }]}>
                   {event.event_type === 'exam' ? '📝 Examen' : '📚 Révision'}
                 </ThemedText>
                 <ThemedText style={styles.priority}>
                   {'⭐'.repeat(event.priority)}
                 </ThemedText>
               </ThemedView>
-            </ThemedView>
+            </TouchableOpacity>
           ))
         ) : (
           <ThemedView style={styles.noEvents}>
@@ -237,11 +295,23 @@ export default function CalendarScreen() {
               </ThemedText>
             </TouchableOpacity>
 
-            {showDatePicker && (
+            {Platform.OS === 'android' ? (
+              showDatePicker && (
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={new Date(newEvent.event_date)}
+                  mode="date"
+                  onChange={handleDateChange}
+                />
+              )
+            ) : (
               <DateTimePicker
+                testID="dateTimePicker"
                 value={new Date(newEvent.event_date)}
                 mode="date"
                 onChange={handleDateChange}
+                display="default"
+                style={{ display: showDatePicker ? 'flex' : 'none' }}
               />
             )}
 
@@ -269,45 +339,100 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f3f4f6',
   },
-  eventList: {
-    flex: 1,
-    padding: 15,
+  header: {
+    padding: 16,
+    paddingTop: 48,
+    backgroundColor: '#60a5fa',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 5,
+  },
+  calendarContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    margin: 10,
+    marginBottom: 5,
+    padding: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  eventsList: {
+    padding: 20,
   },
   dateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#1f2937',
     marginBottom: 15,
     textTransform: 'capitalize',
   },
   eventCard: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
   eventTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#1f2937',
+    flex: 1,
+  },
+  eventType: {
+    fontSize: 14,
+    color: '#60a5fa',
+    fontWeight: '600',
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   eventTime: {
-    color: '#666',
-    marginBottom: 5,
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
   },
   eventDescription: {
-    marginBottom: 10,
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 20,
   },
   eventMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  eventType: {
-    fontSize: 12,
+    marginTop: 10,
   },
   priority: {
-    fontSize: 12,
+    fontSize: 14,
+    color: '#6b7280',
   },
   noEvents: {
     padding: 20,
@@ -315,71 +440,78 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
+    bottom: 30,
+    right: 30,
+    backgroundColor: '#60a5fa',
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
+    minHeight: '70%',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#1f2937',
     marginBottom: 20,
-    textAlign: 'center',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  dateButton: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 15,
     marginBottom: 15,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 20,
   },
   button: {
-    padding: 10,
-    borderRadius: 5,
-    width: '45%',
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: '#ff4444',
+    backgroundColor: '#ef4444',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#60a5fa',
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center',
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
-  dateButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#f5f5f5',
+  completedEvent: {
+    opacity: 0.6,
   },
-}); 
+  completeButton: {
+    padding: 5,
+  }
+});

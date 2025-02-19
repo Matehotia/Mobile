@@ -1,3 +1,6 @@
 --npm install react-native-calendars
 --npm install react-native-chart-kit @types/react-native-chart-kit
 --npx expo install @react-native-community/datetimepicker
+--npm install expo-image-picker expo-file-system
+--npm install expo-image-picker
+--npm install multer

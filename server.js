@@ -75,6 +75,46 @@ app.get('/last-sleep', async (req, res) => {
   }
 });
 
+// Nouvelle route pour récupérer les données de sommeil
+app.get('/sleep-records', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        sleep_date::text,
+        sleep_start::text,
+        sleep_end::text,
+        quality
+      FROM sleep_records
+      WHERE user_id = 1
+      ORDER BY sleep_date DESC
+      LIMIT 7
+    `);
+    
+    console.log('Sleep records found:', result.rows);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching sleep records:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour ajouter un nouvel enregistrement de sommeil
+app.post('/sleep-records', async (req, res) => {
+  const { sleep_date, sleep_start, sleep_end, quality } = req.body;
+  try {
+    const result = await pool.query(`
+      INSERT INTO sleep_records (user_id, sleep_date, sleep_start, sleep_end, quality)
+      VALUES (1, $1, $2, $3, $4)
+      RETURNING *
+    `, [sleep_date, sleep_start, sleep_end, quality]);
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error adding sleep record:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);

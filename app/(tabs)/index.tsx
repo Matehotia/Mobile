@@ -1,4 +1,7 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, Button } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { router } from 'expo-router';
+import { Redirect } from 'expo-router';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -6,6 +9,17 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+  const { logout, isAuthenticated } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
+
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -49,6 +63,9 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <Button title="Déconnexion" onPress={handleLogout} />
       </ThemedView>
     </ParallaxScrollView>
   );

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { Image, StyleSheet, Platform, Button } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { router } from 'expo-router';
@@ -6,7 +7,11 @@ import { Redirect } from 'expo-router';
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
+=======
+import { StyleSheet } from 'react-native';
+>>>>>>> Stashed changes
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
 
 export default function HomeScreen() {
   const { logout, isAuthenticated } = useAuth();
@@ -21,33 +26,32 @@ export default function HomeScreen() {
   }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+    <ThemedView style={styles.container}>
+      {/* Section Rappel du Jour */}
+      <ThemedView style={styles.section}>
+        <ThemedText type="title">Révisions du Jour</ThemedText>
+        <ThemedView style={styles.reminderCard}>
+          <ThemedText type="subtitle">Prochaine révision</ThemedText>
+          <ThemedText>Mathématiques - 14h30</ThemedText>
+          <ThemedText>Chapitre 3: Algèbre linéaire</ThemedText>
+        </ThemedView>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
+
+      {/* Section Statistiques */}
+      <ThemedView style={styles.section}>
+        <ThemedText type="title">Aperçu</ThemedText>
+        <ThemedView style={styles.statsContainer}>
+          <ThemedView style={styles.statCard}>
+            <ThemedText>Temps de sommeil</ThemedText>
+            <ThemedText type="subtitle">7h30</ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.statCard}>
+            <ThemedText>Révisions prévues</ThemedText>
+            <ThemedText type="subtitle">3</ThemedText>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
+<<<<<<< Updated upstream
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
         <ThemedText>
@@ -68,24 +72,36 @@ export default function HomeScreen() {
         <Button title="Déconnexion" onPress={handleLogout} />
       </ThemedView>
     </ParallaxScrollView>
+=======
+    </ThemedView>
+>>>>>>> Stashed changes
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  reminderCard: {
+    backgroundColor: '#f0f0f0',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  statCard: {
+    backgroundColor: '#f0f0f0',
+    padding: 16,
+    borderRadius: 12,
+    width: '48%',
     alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
   },
 });

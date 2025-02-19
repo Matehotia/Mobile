@@ -73,33 +73,23 @@ export default function HomeScreen() {
     <ScrollView style={styles.container}>
       {/* En-tête */}
       <ThemedView style={styles.header}>
-        <ThemedText type="title">Bonjour!</ThemedText>
-        <ThemedText>Voici votre résumé du jour</ThemedText>
+        <ThemedText type="title" style={styles.welcomeText}>Bonjour!</ThemedText>
+        <ThemedText style={styles.welcomeText}>Voici votre résumé du jour</ThemedText>
       </ThemedView>
 
       {/* Section sommeil avec plus de détails */}
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">Dernière nuit</ThemedText>
+        <ThemedText style={styles.subtitle}>Dernière nuit</ThemedText>
         {lastSleep ? (
-          <ThemedView style={styles.card}>
-            <ThemedView style={styles.sleepDetail}>
-              <ThemedView style={styles.sleepTime}>
-                <ThemedText style={styles.sleepLabel}>Couché</ThemedText>
-                <ThemedText style={styles.timeText}>{formatTime(lastSleep.sleep_start)}</ThemedText>
-              </ThemedView>
-              <ThemedText style={styles.sleepArrow}>→</ThemedText>
-              <ThemedView style={styles.sleepTime}>
-                <ThemedText style={styles.sleepLabel}>Réveil</ThemedText>
-                <ThemedText style={styles.timeText}>{formatTime(lastSleep.sleep_end)}</ThemedText>
-              </ThemedView>
+          <ThemedView style={styles.sleepDetail}>
+            <ThemedView style={styles.sleepTime}>
+              <ThemedText style={styles.sleepLabel}>Couché</ThemedText>
+              <ThemedText style={styles.timeText}>{formatTime(lastSleep.sleep_start)}</ThemedText>
             </ThemedView>
-            <ThemedView style={styles.sleepStats}>
-              <ThemedText style={styles.duration}>
-                Durée: {calculateSleepDuration(lastSleep.sleep_start, lastSleep.sleep_end)}
-              </ThemedText>
-              <ThemedText style={styles.quality}>
-                Qualité: {lastSleep.quality}/5 {lastSleep.quality >= 4 ? '😊' : lastSleep.quality >= 3 ? '😐' : '😴'}
-              </ThemedText>
+            <ThemedText style={styles.sleepArrow}>→</ThemedText>
+            <ThemedView style={styles.sleepTime}>
+              <ThemedText style={styles.sleepLabel}>Réveil</ThemedText>
+              <ThemedText style={styles.timeText}>{formatTime(lastSleep.sleep_end)}</ThemedText>
             </ThemedView>
           </ThemedView>
         ) : (
@@ -107,17 +97,27 @@ export default function HomeScreen() {
             <ThemedText>Aucune donnée de sommeil</ThemedText>
           </ThemedView>
         )}
+        {lastSleep && (
+          <ThemedView style={styles.sleepStats}>
+            <ThemedText style={styles.duration}>
+              Durée: {calculateSleepDuration(lastSleep.sleep_start, lastSleep.sleep_end)}
+            </ThemedText>
+            <ThemedText style={styles.quality}>
+              Qualité: {lastSleep.quality}/5 {lastSleep.quality >= 4 ? '😊' : lastSleep.quality >= 3 ? '😐' : '😴'}
+            </ThemedText>
+          </ThemedView>
+        )}
       </ThemedView>
 
       {/* Section Agenda */}
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">Prochains événements</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Prochains événements</ThemedText>
         <ThemedView style={styles.card}>
           {todayEvents && todayEvents.length > 0 ? (
             todayEvents.map((event, index) => (
               <ThemedView key={index} style={styles.eventItem}>
-                <ThemedText type="defaultSemiBold">{event.title}</ThemedText>
-                <ThemedText>
+                <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
+                <ThemedText style={styles.eventDateTime}>
                   {new Date(event.event_date).toLocaleDateString('fr-FR')} - {event.start_time.slice(0, 5)} à {event.end_time.slice(0, 5)}
                 </ThemedText>
                 <ThemedText style={styles.eventType}>
@@ -137,36 +137,54 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f3f4f6',
   },
   header: {
-    padding: 20,
-    gap: 8,
+    padding: 24,
+    paddingTop: 48,
+    backgroundColor: '#60a5fa',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   section: {
     padding: 20,
     gap: 12,
   },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#ffffff',
+    opacity: 0.9,
+  },
   card: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    gap: 8,
-  },
-  eventItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    gap: 4,
-  },
-  eventType: {
-    fontSize: 12,
-    color: '#666',
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 20,
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   sleepDetail: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    backgroundColor: '#f8fafc',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 10,
   },
   sleepTime: {
     alignItems: 'center',
@@ -174,30 +192,73 @@ const styles = StyleSheet.create({
   },
   sleepLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
     marginBottom: 4,
   },
   timeText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#60a5fa',
   },
   sleepArrow: {
     fontSize: 24,
     marginHorizontal: 10,
-    color: '#666',
+    color: '#60a5fa',
   },
   sleepStats: {
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 10,
-    marginTop: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    backgroundColor: '#f8fafc',
+    borderRadius: 15,
+    padding: 15,
+    marginTop: 10,
   },
   duration: {
     fontSize: 16,
+    color: '#4b5563',
+    fontWeight: '600',
   },
   quality: {
     fontSize: 16,
+    color: '#4b5563',
+    fontWeight: '600',
+  },
+  eventItem: {
+    backgroundColor: '#f8fafc',
+    padding: 15,
+    borderRadius: 15,
+    marginVertical: 6,
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 6,
+  },
+  eventDateTime: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  eventType: {
+    fontSize: 14,
+    color: '#60a5fa',
+    fontWeight: '600',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventTypeIcon: {
+    marginRight: 6,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
   },
 });

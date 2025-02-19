@@ -21,11 +21,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function useAuth() {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth doit être utilisé dans un AuthProvider');
   return context;
 }
 
-export default AuthProvider;
-export { useAuth }; 
+export default AuthProvider; 

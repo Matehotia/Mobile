@@ -6,7 +6,11 @@ type AuthContextType = {
   logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  login: () => {},
+  logout: () => {},
+});
 
 export function useAuth() {
   const context = useContext(AuthContext);

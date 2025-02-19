@@ -26,7 +26,7 @@ export default function SleepScreen() {
 
   const fetchSleepData = async () => {
     try {
-      const response = await fetch('http://172.60.250.78:3000/sleep-records');
+      const response = await fetch('http://172.20.10.2:3000/sleep-records');
       const data = await response.json();
       setSleepData(data);
       calculateStats(data);
@@ -85,7 +85,7 @@ export default function SleepScreen() {
     }
 
     try {
-      const response = await fetch('http://172.60.250.78:3000/sleep-records', {
+      const response = await fetch('http://172.20.10.2:3000/sleep-records', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

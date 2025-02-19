@@ -13,7 +13,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://172.60.250.78:3000/login', {  // Remplacez XX par votre IP
+      const response = await fetch('http://172.20.10.2:3000/login', {  // Remplacez XX par votre IP
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

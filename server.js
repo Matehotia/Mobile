@@ -115,6 +115,125 @@ app.post('/sleep-records', async (req, res) => {
   }
 });
 
+// Route pour récupérer tous les événements
+app.get('/events', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id,
+        title,
+        description,
+        to_char(event_date, 'YYYY-MM-DD') as event_date,
+        to_char(start_time, 'HH24:MI') as start_time,
+        to_char(end_time, 'HH24:MI') as end_time,
+        event_type,
+        priority,
+        is_completed
+      FROM agenda
+      WHERE user_id = 1
+      ORDER BY event_date, start_time
+    `);
+    
+    console.log('Events found:', result.rows);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Modifier la route POST /events
+app.post('/events', async (req, res) => {
+  try {
+    const { title, description, event_date, start_time, end_time, event_type, priority } = req.body;
+    
+    console.log('Données reçues:', req.body);
+
+    // Vérification des types et conversion si nécessaire
+    const query = `
+      INSERT INTO agenda (
+        user_id, 
+        title, 
+        description, 
+        event_date, 
+        start_time, 
+        end_time, 
+        event_type, 
+        priority,
+        is_completed
+      )
+      VALUES (
+        1, 
+        $1, 
+        $2, 
+        $3::date, 
+        $4::time, 
+        $5::time, 
+        $6, 
+        $7::integer,
+        false
+      )
+      RETURNING *;
+    `;
+
+    const values = [
+      title,
+      description || '',
+      event_date,
+      start_time,
+      end_time,
+      event_type,
+      priority
+    ];
+
+    console.log('Exécution de la requête avec les valeurs:', values);
+    const result = await pool.query(query, values);
+    
+    console.log('Résultat de l\'insertion:', result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur complète:', error);
+    res.status(500).json({ 
+      message: error.message,
+      detail: error.detail,
+      table: 'agenda',
+      error: error
+    });
+  }
+});
+
+// Route de test pour vérifier les tables
+app.get('/tables', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log('Tables disponibles:', result.rows);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur lors de la vérification des tables:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Route pour vérifier la structure de la table agenda
+app.get('/check-agenda', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'agenda'
+    `);
+    console.log('Structure de la table agenda:', result.rows);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur lors de la vérification de la structure:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);

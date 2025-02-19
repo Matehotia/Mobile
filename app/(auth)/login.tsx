@@ -13,7 +13,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://172.20.10.2:3000/login', {
+      const response = await fetch('http://172.60.250.78:3000/login', {  // Remplacez XX par votre IP
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -21,16 +21,18 @@ export default function LoginScreen() {
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('Réponse:', response);  // Pour debug
       const data = await response.json();
-
+      
       if (data.success) {
-        login(); // Met à jour le contexte d'authentification
-        router.replace('/'); // Redirige vers la page d'accueil
+        login();
+        router.replace('/(tabs)');
       } else {
         Alert.alert('Erreur', 'Identifiants incorrects');
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Erreur de connexion');
+      console.error('Erreur détaillée:', error);  // Pour voir l'erreur complète
+      Alert.alert('Erreur', 'Impossible de se connecter au serveur');
     }
   };
 

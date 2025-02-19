@@ -1,30 +1,8 @@
-<<<<<<< Updated upstream
-import { Image, StyleSheet, Platform, Button } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
-import { router } from 'expo-router';
-import { Redirect } from 'expo-router';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-=======
 import { StyleSheet } from 'react-native';
->>>>>>> Stashed changes
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 
 export default function HomeScreen() {
-  const { logout, isAuthenticated } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    router.replace('/login');
-  };
-
-  if (!isAuthenticated) {
-    return <Redirect href="/login" />;
-  }
-
   return (
     <ThemedView style={styles.container}>
       {/* Section Rappel du Jour */}
@@ -51,30 +29,7 @@ export default function HomeScreen() {
           </ThemedView>
         </ThemedView>
       </ThemedView>
-<<<<<<< Updated upstream
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Button title="Déconnexion" onPress={handleLogout} />
-      </ThemedView>
-    </ParallaxScrollView>
-=======
     </ThemedView>
->>>>>>> Stashed changes
   );
 }
 

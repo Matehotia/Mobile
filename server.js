@@ -253,7 +253,7 @@ app.post('/upload-avatar', upload.single('avatar'), async (req, res) => {
       return res.status(400).json({ error: 'Aucun fichier uploadé' });
     }
 
-    const avatarUrl = `http://172.20.10.2:3000/uploads/avatars/${req.file.filename}`;
+    const avatarUrl = `http://172.20.10.4:3000/uploads/avatars/${req.file.filename}`;
     
     await pool.query(
       'UPDATE users SET avatar_url = $1 WHERE id = 1',
@@ -292,7 +292,17 @@ app.get('/user-stats', async (req, res) => {
   try {
     const stats = await pool.query(`
       SELECT 
-        COALESCE(SUM(EXTRACT(EPOCH FROM (sleep_end::time - sleep_start::time))/3600), 0) as total_sleep_hours,
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN sleep_end::time > sleep_start::time THEN
+                EXTRACT(EPOCH FROM (sleep_end::time - sleep_start::time))/3600
+              ELSE
+                EXTRACT(EPOCH FROM (sleep_end::time - sleep_start::time + INTERVAL '24 hours'))/3600
+            END
+          ), 
+          0
+        ) as total_sleep_hours,
         COALESCE(ROUND(AVG(quality)::numeric, 1), 0) as average_quality,
         COALESCE((SELECT COUNT(*) FROM agenda WHERE user_id = 1), 0) as planned_events,
         COALESCE((SELECT COUNT(*) FROM agenda WHERE user_id = 1 AND is_completed = true), 0) as completed_events

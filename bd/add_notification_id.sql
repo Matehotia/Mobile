@@ -1,0 +1,1 @@
+ALTER TABLE agenda ADD COLUMN IF NOT EXISTS notification_id TEXT;

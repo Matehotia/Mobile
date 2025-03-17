@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { LineChart } from 'react-native-chart-kit';
 import { AntDesign } from '@expo/vector-icons';
+import { useNotifications } from '@/context/NotificationContext';
 
 type SleepRecord = {
   sleep_date: string;
@@ -23,6 +24,7 @@ export default function SleepScreen() {
     sleep_end: '07:00',
     quality: 5
   });
+  const { scheduleSleepReminder, requestPermissions } = useNotifications();
 
   const fetchSleepData = async () => {
     try {
@@ -118,7 +120,18 @@ export default function SleepScreen() {
 
   useEffect(() => {
     fetchSleepData();
+    setupNotifications();
   }, []);
+
+  const setupNotifications = async () => {
+    const hasPermission = await requestPermissions();
+    if (hasPermission) {
+      // Définir un rappel quotidien pour 22h
+      const bedtime = new Date();
+      bedtime.setHours(22, 0, 0, 0);
+      await scheduleSleepReminder(bedtime);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>

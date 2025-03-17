@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { AntDesign } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNotifications } from '@/context/NotificationContext';
 
 type Event = {
   id: number;
@@ -37,6 +38,7 @@ export default function CalendarScreen() {
     priority: 1
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { scheduleEventNotification, cancelNotification } = useNotifications();
 
   const fetchEvents = async () => {
     try {
@@ -71,13 +73,12 @@ export default function CalendarScreen() {
 
       console.log('Envoi de données:', newEvent);
 
-      const response = await fetch('http://172.20.10.4:3000/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
+      const eventDateTime = new Date(newEvent.event_date);
+      const [hours, minutes] = newEvent.start_time.split(':');
+      eventDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+      try {
+        const newEventData = {
           title: newEvent.title,
           description: newEvent.description || '',
           event_date: newEvent.event_date,
@@ -85,31 +86,66 @@ export default function CalendarScreen() {
           end_time: newEvent.end_time,
           event_type: newEvent.event_type,
           priority: Number(newEvent.priority)
-        }),
-      });
+        };
 
-      const responseText = await response.text();
-      console.log('Réponse brute du serveur:', responseText);
+        console.log('Envoi de données:', newEventData);
 
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Erreur de parsing JSON:', responseText);
-        Alert.alert('Erreur', 'Le serveur a renvoyé une réponse invalide');
-        return;
-      }
+        const response = await fetch('http://172.20.10.4:3000/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(newEventData),
+        });
 
-      if (response.ok) {
-        Alert.alert('Succès', 'Événement ajouté !');
-        setModalVisible(false);
-        fetchEvents();
-      } else {
-        Alert.alert('Erreur', `Impossible d'ajouter l'événement: ${data.message || 'Erreur inconnue'}`);
+        const responseText = await response.text();
+        console.log('Réponse brute du serveur:', responseText);
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Erreur de parsing JSON:', responseText);
+          Alert.alert('Erreur', 'Le serveur a renvoyé une réponse invalide');
+          return;
+        }
+
+        if (response.ok) {
+          // Programmer une notification 30 minutes avant l'événement
+          const notificationTime = new Date(eventDateTime);
+          notificationTime.setMinutes(notificationTime.getMinutes() - 30);
+          
+          const notificationId = await scheduleEventNotification(
+            newEvent.title,
+            `Votre événement "${newEvent.title}" commence dans 30 minutes`,
+            notificationTime
+          );
+
+          // Stocker l'ID de notification avec l'événement
+          await fetch('http://172.20.10.4:3000/events/notification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              eventId: data.id,
+              notificationId
+            }),
+          });
+
+          Alert.alert('Succès', 'Événement ajouté !');
+          setModalVisible(false);
+          fetchEvents();
+        } else {
+          Alert.alert('Erreur', `Impossible d'ajouter l'événement: ${data.message || 'Erreur inconnue'}`);
+        }
+      } catch (error) {
+        console.error('Erreur détaillée:', error);
+        Alert.alert('Erreur', 'Erreur de connexion au serveur');
       }
     } catch (error) {
-      console.error('Erreur détaillée:', error);
-      Alert.alert('Erreur', 'Erreur de connexion au serveur');
+      console.error('Erreur:', error);
     }
   };
 

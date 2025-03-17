@@ -67,5 +67,12 @@ npm install express pg cors
 npm install express cors
 npm install --save-dev @types/express @types/cors typescript ts-node
 
-commande pour arreter le port 3000
+
+-- pour la notification
+npx expo install expo-notifications
+
+-- commande pour arreter le port 3000
 taskkill /F /IM node.exe
+
+--pour tester les notif
+Invoke-WebRequest -Uri 'http://172.20.10.4:3000/events' -Method Post -Headers @{'Content-Type'='application/json'} -Body '{"title":"Test Notification","description":"Ceci est un test de notification","event_date":"2025-03-17","start_time":"08:55","end_time":"09:00","event_type":"test","priority":1}'

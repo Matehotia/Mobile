@@ -214,6 +214,50 @@ app.post('/events', async (req, res) => {
   }
 });
 
+// Route pour stocker l'ID de notification d'un événement
+app.post('/events/notification', async (req, res) => {
+  const { eventId, notificationId } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE agenda SET notification_id = $1 WHERE id = $2 AND user_id = 1',
+      [notificationId, eventId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour supprimer une notification lors de la suppression d'un événement
+app.delete('/events/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Récupérer l'ID de notification avant de supprimer l'événement
+    const result = await pool.query(
+      'SELECT notification_id FROM agenda WHERE id = $1 AND user_id = 1',
+      [id]
+    );
+    
+    if (result.rows.length > 0 && result.rows[0].notification_id) {
+      // Annuler la notification programmée
+      await Notifications.cancelScheduledNotificationAsync(result.rows[0].notification_id);
+    }
+    
+    await pool.query(
+      'DELETE FROM agenda WHERE id = $1 AND user_id = 1',
+      [id]
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Route de test pour vérifier les tables
 app.get('/tables', async (req, res) => {
   try {

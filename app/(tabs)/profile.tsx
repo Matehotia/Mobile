@@ -46,7 +46,7 @@ export default function ProfileScreen() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://172.20.10.2:3000/profile');
+      const response = await fetch('http://172.20.10.4:3000/profile');
       const data = await response.json();
       setProfile(data);
     } catch (error) {
@@ -56,7 +56,7 @@ export default function ProfileScreen() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://172.20.10.2:3000/user-stats');
+      const response = await fetch('http://172.20.10.4:3000/user-stats');
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
         name: 'avatar.jpg',
       } as any);
 
-      const response = await fetch('http://172.20.10.2:3000/upload-avatar', {
+      const response = await fetch('http://172.20.10.4:3000/upload-avatar', {
         method: 'POST',
         body: formData,
         headers: {
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
             </ThemedView>
             <ThemedView style={styles.statCard}>
               <ThemedText style={styles.statValue}>
-                {stats?.average_quality !== undefined ? `${stats.average_quality.toFixed(1)}/5` : '0/5'}
+                {stats?.average_quality !== undefined ? `${Number(stats.average_quality).toFixed(1)}/5` : '0/5'}
               </ThemedText>
               <ThemedText style={styles.statLabel}>Qualité moyenne</ThemedText>
             </ThemedView>

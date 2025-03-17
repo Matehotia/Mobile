@@ -26,7 +26,7 @@ export default function SleepScreen() {
 
   const fetchSleepData = async () => {
     try {
-      const response = await fetch('http://172.20.10.2:3000/sleep-records');
+      const response = await fetch('http://172.20.10.4:3000/sleep-records');
       const data = await response.json();
       setSleepData(data);
       calculateStats(data);
@@ -89,7 +89,7 @@ export default function SleepScreen() {
     }
 
     try {
-      const response = await fetch('http://172.20.10.2:3000/sleep-records', {
+      const response = await fetch('http://172.20.10.4:3000/sleep-records', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export default function SleepScreen() {
 
       if (response.ok) {
         // Mettre à jour les statistiques globales
-        await fetch('http://172.20.10.2:3000/update-stats', {
+        await fetch('http://172.20.10.4:3000/update-stats', {
           method: 'POST',
         });
         

@@ -40,7 +40,7 @@ export default function CalendarScreen() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch(`http://172.20.10.2:3000/events`);
+      const response = await fetch(`http://172.20.10.4:3000/events`);
       const data = await response.json();
       setEvents(data);
       
@@ -71,7 +71,7 @@ export default function CalendarScreen() {
 
       console.log('Envoi de données:', newEvent);
 
-      const response = await fetch('http://172.20.10.2:3000/events', {
+      const response = await fetch('http://172.20.10.4:3000/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export default function CalendarScreen() {
 
   const toggleEventCompletion = async (eventId: number, completed: boolean) => {
     try {
-      const response = await fetch(`http://172.20.10.2:3000/events/${eventId}/complete`, {
+      const response = await fetch(`http://172.20.10.4:3000/events/${eventId}/complete`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ export default function CalendarScreen() {
       if (response.ok) {
         fetchEvents();
         // Mettre à jour les statistiques
-        await fetch('http://172.20.10.2:3000/update-stats', {
+        await fetch('http://172.20.10.4:3000/update-stats', {
           method: 'POST',
         });
       }

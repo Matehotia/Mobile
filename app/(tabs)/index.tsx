@@ -29,12 +29,12 @@ export default function HomeScreen() {
 
   const fetchTodayData = async () => {
     try {
-      const eventsResponse = await fetch('http://172.20.10.2:3000/today-events');
+      const eventsResponse = await fetch('http://172.20.10.4:3000/today-events');
       const eventsData = await eventsResponse.json();
       console.log('Events received:', eventsData); // Pour debug
       setTodayEvents(eventsData);
 
-      const sleepResponse = await fetch('http://172.20.10.2:3000/last-sleep');
+      const sleepResponse = await fetch('http://172.20.10.4:3000/last-sleep');
       const sleepData = await sleepResponse.json();
       setLastSleep(sleepData);
     } catch (error) {

@@ -66,3 +66,6 @@ npm install pg @types/pg
 npm install express pg cors
 npm install express cors
 npm install --save-dev @types/express @types/cors typescript ts-node
+
+commande pour arreter le port 3000
+taskkill /F /IM node.exe
